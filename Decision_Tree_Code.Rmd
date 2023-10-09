@@ -1,0 +1,139 @@
+---
+title: "Decision Tree Task"
+author: 'Reg no: SDS6/43802/2023'
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Decision tree Project}
+## Import the required packages
+#Installing libraries
+#install.packages('rpart')
+#install.packages('caret')
+#install.packages('rpart.plot')
+#install.packages('rattle')
+ 
+#Loading libraries
+library(rpart,quietly = TRUE)
+library(caret,quietly = TRUE)
+library(rpart.plot,quietly = TRUE)
+library(rattle)
+```
+```{r Load in the Data}
+#Reading the data set as a dataframe
+Housing_data<- read.csv ("C:/Users/Administrator/Desktop/Wangari Muchai/UON/Semester 2/Machine Learning/Datasets/R1_House_Sale_Price.csv")
+
+Housing_data
+
+# structure of the data
+str(Housing_data)
+```
+## Data Cleaning
+```{r Data Cleaning}
+# number of rows with missing values
+nrow(Housing_data) - sum(complete.cases(Housing_data))
+
+## Dropping the missing Values
+na.omit(Housing_data)
+
+# deleting redundant variable `House_ID 
+Housing_data$HOUSE_ID <- NULL
+
+##Structure after removing the missing values
+str(Housing_data)
+```
+
+## Data Exploration and Analysis
+```{r Data Exploration}
+# analyzing the Estate type
+table(Housing_data$SaleType,Housing_data$EstateType)
+
+
+##Our next step in the data exploration stage is to predict which variable would be the best one for splitting the Decision Trees
+
+number.perfect.splits <- apply(X=Housing_data[-1], MARGIN = 2, FUN = function(col){
+t <- table(Housing_data$SaleType,col)
+sum(t == 0)
+})
+ 
+# Descending order of perfect splits
+order <- order(number.perfect.splits,decreasing = TRUE)
+number.perfect.splits <- number.perfect.splits[order]
+
+#print(number.perfect.splits)
+
+# Plot graph
+par(mar=c(10,2,2,2))
+barplot(number.perfect.splits,
+main="Number of perfect splits vs feature",
+xlab="",ylab="Feature",las=2,col="wheat")
+```
+
+
+#Data Splicing
+```{r Data splitting}
+#data splicing
+set.seed(12345)
+train <- sample(1:nrow(Housing_data),size = ceiling(0.70*nrow(Housing_data)),replace = FALSE)
+# training set
+Housing_data_train <- Housing_data[train,]
+# test set
+Housing_data_test <- Housing_data[-train,]
+
+str(Housing_data_train)
+str(Housing_data_test)
+```
+
+
+
+
+# Building a model(Decision Tree Model)
+```{r  Building a model}
+# penalty matrix
+# Example penalty matrix for a binary classification problem
+#penalty_matrix <- matrix(c(0, 1, 1, 0), nrow = 2, ncol = 2, byrow = TRUE)
+
+#penalty.matrix <- matrix(c(0,1,10,0), byrow=TRUE, nrow=2)
+# building the classification tree with rpart
+tree <- rpart(SaleType~.,data=Housing_data_train,method = "class")
+print(tree)
+
+```
+
+
+#Visualising the tree
+```{r Visualising the tree}
+
+#rpart.plot(tree, nn=TRUE)
+```
+#Testing the model
+
+```{r Testing the model }
+
+pred <- predict(object=tree,Housing_data_test[-13],type="class")
+
+```
+
+#Calculating accuracy
+
+
+```{r Calculating accuracy}
+# Install and load the 'e1071' package if not already installed
+# install.packages("e1071")
+library(e1071)
+library (caret)
+# Now, you can use the confusionMatrix function
+#confusionMatrix(t)
+
+#Calculating accuracy
+t <- table(Housing_data_test$SaleType,pred)
+confusionMatrix(t)
+
+```
+#From the above evaluation,the accuracy rate is 0.8692(86.92%) showing that 86.92% of the test data has been correctly predicted, indicating that the Decision Trees model could be used for House Price prediction.
